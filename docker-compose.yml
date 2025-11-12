@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      # This is the main "edge port" that all services are exposed on
+      - "127.0.0.1:4566:4566"
+      # (Optional) Port range for individual legacy services
+      - "127.0.0.1:4510-4559:4510-4559"
+    environment:
+      # We list the services we want to use. Add more as needed!
+      - SERVICES=s3,sqs,lambda,dynamodb
+      # DEBUG=1 provides more verbose logs, useful for learning
+      - DEBUG=1
+    volumes:
+      # 1. This is the persistent volume for all Localstack data
+      - localstack-data:/var/lib/localstack
+      
+      # 2. This mounts our init script to create resources
+      - ./init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+      
+      # 3. This is required for Localstack to start Lambda containers
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      # This waits until the "ready" init scripts are done
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/init/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# This defines the named volume for persistence
+volumes:
+  localstack-data:
+    name: "localstack-data"
