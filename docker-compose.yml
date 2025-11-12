@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:2.3.2
     container_name: localstack
     ports:
       # This is the main "edge port" that all services are exposed on
@@ -11,7 +11,7 @@ services:
       - "127.0.0.1:4510-4559:4510-4559"
     environment:
       # We list the services we want to use. Add more as needed!
-      - SERVICES=s3,sqs,lambda,dynamodb
+      - SERVICES=s3,sqs,lambda,iam,cloudformation,ec2
       # DEBUG=1 provides more verbose logs, useful for learning
       - DEBUG=1
     volumes:
@@ -19,10 +19,13 @@ services:
       - localstack-data:/var/lib/localstack
       
       # 2. This mounts our init script to create resources
-      - ./init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+      #- ./init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
       
       # 3. This is required for Localstack to start Lambda containers
       - /var/run/docker.sock:/var/run/docker.sock
+
+      # 4. THIS IS THE NEW LINE YOU NEED TO ADD
+      - ./lambda-src:/opt/code/lambda-src
     healthcheck:
       # This waits until the "ready" init scripts are done
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/init/ready"]
